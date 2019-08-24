@@ -5,9 +5,10 @@ NS.c 动态识别传感器算法
 移植：	复制NS结构体，MIN_STEP宏定义，NS_zone函数即可
 时间：	2019年8月21日19:48:08
 作者：	meetwit		 
-版本：	NS当前版本V1.0.1
+版本：	NS当前版本V1.0.2
 		V1.0.0	首次建立版本，实现单个开关检测
 		V1.0.1	将静态变量first改为结构体成员，实现多个检测重入问题
+		V1.0.2	增加结构体成员adcv，使得结构体具有adc采集的数值，delete函数中5的返回值
 */
 
 #include "stdio.h"
@@ -18,6 +19,7 @@ MIN_STEP adc采用作为单位，设置为拉伸一次传感器，量程的一�
 #define MIN_STEP 100
 
 struct NS{
+	int adcv;
 	int N_v;			//动态最大值 
 	int S_v;			//动态最小值 
 	int N_S;			//动态量程 
@@ -40,23 +42,25 @@ struct NS{
 */	
 int NS_zone(struct NS * ns,int adc_v){
 
+	ns->adcv = adc_v;
+
 	/*step 1 : first init*/
 	if(ns->first[0]){
 		ns->first[0]=0;
-		ns->N_v=adc_v;
-		ns->S_v=adc_v;
+		ns->N_v=ns->adcv;
+		ns->S_v=ns->adcv;
 		ns->N_S=0;
 		return 0;	//first init
 	}
 	
 	/*step 2 : init N_v & S_v*/
 	if(ns->N_S<MIN_STEP){
-		if(ns->N_v<adc_v){
-			ns->N_v = adc_v;
+		if(ns->N_v<ns->adcv){
+			ns->N_v = ns->adcv;
 			ns->N_S = ns->N_v - ns->S_v;
 		}
-		if(ns->S_v>adc_v){
-			ns->S_v = adc_v;
+		if(ns->S_v>ns->adcv){
+			ns->S_v = ns->adcv;
 			ns->N_S = ns->N_v - ns->S_v;
 		}
 	
@@ -64,32 +68,32 @@ int NS_zone(struct NS * ns,int adc_v){
 	}
 	
 	/*step 3 : find state_NS and refresh N_S*/
-	if(adc_v>(ns->N_S*0.67+ns->S_v)){
+	if(ns->adcv>(ns->N_S*0.67+ns->S_v)){
 		ns->state_NS = 2;
 		if(ns->first[2]){
 			ns->first[2]=0;
 			ns->first[1]=1;
 			ns->N_S = ns->N_v - ns->S_v; 
-			ns->N_v = adc_v;
+			ns->N_v = ns->adcv;
 			return 20;
 		}else{
-			if(adc_v>ns->N_v){
-				ns->N_v = adc_v;
+			if(ns->adcv>ns->N_v){
+				ns->N_v = ns->adcv;
 				ns->N_S = ns->N_v - ns->S_v; 
 			}
 			return 2;
 		}
-	}else if(adc_v<(ns->N_S*0.33+ns->S_v)){
+	}else if(ns->adcv<(ns->N_S*0.33+ns->S_v)){
 		ns->state_NS = 1;
 		if(ns->first[1]){
 			ns->first[1]=0;
 			ns->first[2]=1;
 			ns->N_S = ns->N_v - ns->S_v; 
-			ns->S_v  = adc_v;
+			ns->S_v  = ns->adcv;
 			return 10;
 		}else{
-			if(adc_v<ns->S_v){
-				ns->S_v = adc_v;
+			if(ns->adcv<ns->S_v){
+				ns->S_v = ns->adcv;
 				ns->N_S = ns->N_v - ns->S_v; 
 			}
 			return 1;
@@ -98,7 +102,6 @@ int NS_zone(struct NS * ns,int adc_v){
 		return 4;
 	}
 	
-	return 5;
 }
 
 int main(){
