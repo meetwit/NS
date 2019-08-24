@@ -5,8 +5,9 @@ NS.c 动态识别传感器算法
 移植：	复制NS结构体，MIN_STEP宏定义，NS_zone函数即可
 时间：	2019年8月21日19:48:08
 作者：	meetwit		 
-版本：	NS当前版本V1.0.0
+版本：	NS当前版本V1.0.1
 		V1.0.0	首次建立版本，实现单个开关检测
+		V1.0.1	将静态变量first改为结构体成员，实现多个检测重入问题
 */
 
 #include "stdio.h"
@@ -21,6 +22,7 @@ struct NS{
 	int S_v;			//动态最小值 
 	int N_S;			//动态量程 
 	int state_NS;		//状态
+	int first[3];
 };
 
 /*
@@ -36,60 +38,59 @@ struct NS{
 说	明：	当识别开关时，可以直接使用返回值10&20，
 			此时分别进入低高区域，选择其中一个即可识别开关 
 */	
-int NS_zone(struct NS * ns1,int adc_v){
-	static int first[3]={1,1,1};
-	
+int NS_zone(struct NS * ns,int adc_v){
+
 	/*step 1 : first init*/
-	if(first[0]){
-		first[0]=0;
-		ns1->N_v=adc_v;
-		ns1->S_v=adc_v;
-		ns1->N_S=0;
+	if(ns->first[0]){
+		ns->first[0]=0;
+		ns->N_v=adc_v;
+		ns->S_v=adc_v;
+		ns->N_S=0;
 		return 0;	//first init
 	}
 	
 	/*step 2 : init N_v & S_v*/
-	if(ns1->N_S<MIN_STEP){
-		if(ns1->N_v<adc_v){
-			ns1->N_v = adc_v;
-			ns1->N_S = ns1->N_v - ns1->S_v;
+	if(ns->N_S<MIN_STEP){
+		if(ns->N_v<adc_v){
+			ns->N_v = adc_v;
+			ns->N_S = ns->N_v - ns->S_v;
 		}
-		if(ns1->S_v>adc_v){
-			ns1->S_v = adc_v;
-			ns1->N_S = ns1->N_v - ns1->S_v;
+		if(ns->S_v>adc_v){
+			ns->S_v = adc_v;
+			ns->N_S = ns->N_v - ns->S_v;
 		}
 	
 		return 3;	//with refresh
 	}
 	
 	/*step 3 : find state_NS and refresh N_S*/
-	if(adc_v>(ns1->N_S*0.67+ns1->S_v)){
-		ns1->state_NS = 2;
-		if(first[2]){
-			first[2]=0;
-			first[1]=1;
-			ns1->N_S = ns1->N_v - ns1->S_v; 
-			ns1->N_v = adc_v;
+	if(adc_v>(ns->N_S*0.67+ns->S_v)){
+		ns->state_NS = 2;
+		if(ns->first[2]){
+			ns->first[2]=0;
+			ns->first[1]=1;
+			ns->N_S = ns->N_v - ns->S_v; 
+			ns->N_v = adc_v;
 			return 20;
 		}else{
-			if(adc_v>ns1->N_v){
-				ns1->N_v = adc_v;
-				ns1->N_S = ns1->N_v - ns1->S_v; 
+			if(adc_v>ns->N_v){
+				ns->N_v = adc_v;
+				ns->N_S = ns->N_v - ns->S_v; 
 			}
 			return 2;
 		}
-	}else if(adc_v<(ns1->N_S*0.33+ns1->S_v)){
-		ns1->state_NS = 1;
-		if(first[1]){
-			first[1]=0;
-			first[2]=1;
-			ns1->N_S = ns1->N_v - ns1->S_v; 
-			ns1->S_v  = adc_v;
+	}else if(adc_v<(ns->N_S*0.33+ns->S_v)){
+		ns->state_NS = 1;
+		if(ns->first[1]){
+			ns->first[1]=0;
+			ns->first[2]=1;
+			ns->N_S = ns->N_v - ns->S_v; 
+			ns->S_v  = adc_v;
 			return 10;
 		}else{
-			if(adc_v<ns1->S_v){
-				ns1->S_v = adc_v;
-				ns1->N_S = ns1->N_v - ns1->S_v; 
+			if(adc_v<ns->S_v){
+				ns->S_v = adc_v;
+				ns->N_S = ns->N_v - ns->S_v; 
 			}
 			return 1;
 		}
@@ -100,35 +101,20 @@ int NS_zone(struct NS * ns1,int adc_v){
 	return 5;
 }
 
-void scope(struct NS * ns1,int start,int end){
-	static int j=0;
-	int i=0,p=0;
-	j++;
-	
-	if(start<end)
-	for(i=start;i<end;i++){
-		p = NS_zone(ns1,i);
-		printf("j=%d,i=%d,output=%d,N_S=%d,N_v=%d,S_v=%d,\r\n",j,i,p,ns1->N_S,ns1->N_v,ns1->S_v);
-	}
-	if(end<start)
-	for(i=start;i>end;i--){
-		p = NS_zone(ns1,i);
-		printf("j=%d,i=%d,output=%d,N_S=%d,N_v=%d,S_v=%d,\r\n",j,i,p,ns1->N_S,ns1->N_v,ns1->S_v);
-	}
-}
-
 int main(){
 	
-	struct NS * ns2;
+	struct NS ns1 = {
+		.first={1,1,1}
+	};
 	
-	scope(&ns2,0,200);
-	scope(&ns2,200,50);
-	scope(&ns2,50,250);
-	scope(&ns2,250,0);
-	scope(&ns2,0,200);
-	scope(&ns2,200,50);
-	scope(&ns2,50,250);
-	scope(&ns2,250,0);
+	struct NS ns2={
+		.first={1,1,1}
+	};
+	
+	while(1){
+		NS_zone(&ns1,100);
+		NS_zone(&ns2,100);
+	}
 	
 	return 0;
 } 
