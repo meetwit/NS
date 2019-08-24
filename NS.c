@@ -5,6 +5,7 @@ NS.c 动态识别传感器算法
 移植：	复制NS结构体，MIN_STEP宏定义，NS_zone函数即可
 时间：	2019年8月21日19:48:08
 作者：	meetwit		 
+版本：	V1.0.0
 */
 
 #include "stdio.h"
