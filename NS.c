@@ -104,20 +104,37 @@ int NS_zone(struct NS * ns,int adc_v){
 	
 }
 
-int main(){
+void scope(struct NS * ns,int start,int end){
+	static int j=0;
+	int i=0,p=0;
+	j++;
 	
-	struct NS ns1 = {
-		.first={1,1,1}
-	};
+	if(start<end)
+	for(i=start;i<end;i++){
+		p = NS_zone(ns,i);
+		printf("j=%d,i=%d,output=%d,N_S=%d,N_v=%d,S_v=%d,\r\n",j,i,p,ns->N_S,ns->N_v,ns->S_v);
+	}
+	if(end<start)
+	for(i=start;i>end;i--){
+		p = NS_zone(ns,i);
+		printf("j=%d,i=%d,output=%d,N_S=%d,N_v=%d,S_v=%d,\r\n",j,i,p,ns->N_S,ns->N_v,ns->S_v);
+	}
+}
+
+int main(){
 	
 	struct NS ns2={
 		.first={1,1,1}
 	};
 	
-	while(1){
-		NS_zone(&ns1,100);
-		NS_zone(&ns2,100);
-	}
+	scope(&ns2,0,200);
+	scope(&ns2,200,50);
+	scope(&ns2,50,250);
+	scope(&ns2,250,0);
+	scope(&ns2,0,200);
+	scope(&ns2,200,50);
+	scope(&ns2,50,250);
+	scope(&ns2,250,0);
 	
 	return 0;
 } 
