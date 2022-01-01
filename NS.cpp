@@ -12,7 +12,7 @@ void showMsg(int j, int i, int p, NS ns)
 {
     std::cout << "j=" << j << ",i=" << i << ",output=" << p;
     std::cout << ",N_S=" << ns.get_N_S() << ",N_v=" << ns.get_N_v() << ",S_v=" << ns.get_S_v();
-    std::cout << ",\r\n";
+    std::cout << ",%=" << ns.NS_zone_p() << ",\r\n";
 }
 
 void scope(NS &ns2, int start, int end)

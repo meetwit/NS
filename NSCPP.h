@@ -5,8 +5,8 @@
  * 移植:    复制NS类，MIN_STEP宏定义，NS_zone函数即可
  * 作者:    meetwit
  * 首版本时间:     2019年08月21日19:48:08
- * 最新版本时间:   2022年01月02日01:14:17
- * 版本:    NS当前版本V1.0.4
+ * 版本:
+ *         V1.0.5    增加百分比输出NS_zone_p
  *         V1.0.4    C++版本使用更标准的写法，使用class定义数据以及功能，将NS功能体现在H文件
  *         V1.0.3    定义C++版本
  *         V1.0.2    增加结构体成员adcv，使得结构体具有adc采集的数值，delete函数中5的返回值
@@ -137,5 +137,12 @@ public:
         {
             return 4;
         }
+    }
+    // NS_zone_p 返回拉伸量百分比%
+    double NS_zone_p(void)
+    {
+        double rtv;
+        ns.N_S != 0 ? rtv = (ns.adcv - ns.S_v) / (double)ns.N_S : rtv = 0;
+        return rtv;
     }
 };
