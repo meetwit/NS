@@ -6,6 +6,7 @@
  * 作者:    meetwit
  * 首版本时间:     2019年08月21日19:48:08
  * 版本:
+ *         V1.0.6    增加设置最大值最小值的接口setLimit
  *         V1.0.5    增加百分比输出NS_zone_p
  *         V1.0.4    C++版本使用更标准的写法，使用class定义数据以及功能，将NS功能体现在H文件
  *         V1.0.3    定义C++版本
@@ -33,8 +34,28 @@ private:
         int N_S;      //动态量程
         int state_NS; //状态
         int first[3];
+        int minValue;
+        int maxValue;
     };
     struct NSData ns;
+    int adcvLimit(int adcv)
+    {
+        if (ns.minValue != -1)
+        {
+            if (adcv < ns.minValue)
+            {
+                adcv = ns.minValue;
+            }
+        }
+        if (ns.maxValue != -1)
+        {
+            if (adcv > ns.maxValue)
+            {
+                adcv = ns.maxValue;
+            }
+        }
+        return adcv;
+    }
 
 public:
     NS()
@@ -42,6 +63,13 @@ public:
         ns.first[0] = 1;
         ns.first[1] = 1;
         ns.first[2] = 1;
+        ns.minValue = -1;
+        ns.maxValue = -1;
+    }
+    void setLimit(int minValue, int maxValue)
+    {
+        ns.minValue = minValue;
+        ns.maxValue = maxValue;
     }
     int get_N_v() { return ns.N_v; }
     int get_S_v() { return ns.S_v; }
@@ -61,7 +89,7 @@ public:
     int NS_zone(int adc_v)
     {
 
-        ns.adcv = adc_v;
+        ns.adcv = adcvLimit(adc_v);
 
         /*step 1 : first init*/
         if (ns.first[0])

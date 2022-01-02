@@ -29,10 +29,14 @@ void scope(NS &ns2, int start, int end)
         adcv += dis;
     }
 }
+
 int main()
 {
     NS ns2;
     int last = -1;
+
+    ns2.setLimit(15, 235);
+    ns2.setLimit(0, 500);
     for (auto data : algData)
     {
         if (last != -1)
